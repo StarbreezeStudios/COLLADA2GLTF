@@ -1,13 +1,14 @@
 cmake_minimum_required (VERSION 3.1.0)
+set(CMAKE_SYSTEM_VERSION 8.1)
 
 set(PROJECT_NAME COLLADA2GLTF)
 
 project(${PROJECT_NAME})
 if(MSVC)
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
-  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MDd")
+  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MD")
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   add_compile_options(-std=c++11 -lstdc++fs)
@@ -50,6 +51,14 @@ if(MSVC)
    target_link_libraries(${PROJECT_NAME}-bin ${PROJECT_NAME} argparse)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
    target_link_libraries(${PROJECT_NAME}-bin ${PROJECT_NAME} argparse stdc++fs)
+endif()
+
+#dll
+add_library(${PROJECT_NAME}-dll SHARED src/collada2gltf.cpp)
+if(MSVC)
+   target_link_libraries(${PROJECT_NAME}-dll ${PROJECT_NAME})
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+   target_link_libraries(${PROJECT_NAME}-dll ${PROJECT_NAME} stdc++fs)
 endif()
 
 if(test)
