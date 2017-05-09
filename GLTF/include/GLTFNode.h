@@ -34,6 +34,7 @@ namespace GLTF {
 				float a30, float a31, float a32, float a33);
 
 			void premultiply(TransformMatrix* transform);
+			void scaleUniform(float scale);
 			bool isIdentity();
 			void getTransformTRS(TransformTRS* out);
 			TransformTRS* getTransformTRS();
@@ -51,7 +52,7 @@ namespace GLTF {
 
 		GLTF::Camera* camera;
 		std::vector<GLTF::Node*> children;
-		std::vector<GLTF::Node*> skeletons;
+		GLTF::Node* skeleton;
 		GLTF::Skin* skin = NULL;
 		std::string jointName;
 		GLTF::Mesh* mesh = NULL;

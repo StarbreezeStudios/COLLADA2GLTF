@@ -101,6 +101,144 @@ void GLTF::Material::writeJSON(void* writer, GLTF::Options* options) {
 	GLTF::Object::writeJSON(writer, options);
 }
 
+void GLTF::MaterialPBR::Texture::writeJSON(void* writer, GLTF::Options* options) {
+	rapidjson::Writer<rapidjson::StringBuffer>* jsonWriter = (rapidjson::Writer<rapidjson::StringBuffer>*)writer;
+	if (scale >= 0) {
+		jsonWriter->Key("scale");
+		jsonWriter->Int(scale);
+	}
+	if (texture) {
+		jsonWriter->Key("index");
+		jsonWriter->Int(texture->id);
+	}
+	if (texCoord >= 0) {
+		jsonWriter->Key("texCoord");
+		jsonWriter->Int(texCoord);
+	}
+	GLTF::Object::writeJSON(writer, options);
+}
+
+void GLTF::MaterialPBR::MetallicRoughness::writeJSON(void* writer, GLTF::Options* options) {
+	rapidjson::Writer<rapidjson::StringBuffer>* jsonWriter = (rapidjson::Writer<rapidjson::StringBuffer>*)writer;
+	if (baseColorFactor) {
+		jsonWriter->Key("baseColorFactor");
+		jsonWriter->StartArray();
+		for (int i = 0; i < 4; i++) {
+			jsonWriter->Double(baseColorFactor[i]);
+		}
+		jsonWriter->EndArray();
+	}
+	if (baseColorTexture) {
+		jsonWriter->Key("baseColorTexture");
+		jsonWriter->StartObject();
+		baseColorTexture->writeJSON(writer, options);
+		jsonWriter->EndObject();
+	}
+	if (metallicFactor >= 0) {
+		jsonWriter->Key("metallicFactor");
+		jsonWriter->Double(metallicFactor);
+	}
+	if (roughnessFactor >= 0) {
+		jsonWriter->Key("roughnessFactor");
+		jsonWriter->Double(roughnessFactor);
+	}
+	if (metallicRoughnessTexture) {
+		jsonWriter->Key("metallicRoughnessTexture");
+		jsonWriter->StartObject();
+		metallicRoughnessTexture->writeJSON(writer, options);
+		jsonWriter->EndObject();
+	}
+	GLTF::Object::writeJSON(writer, options);
+}
+
+void GLTF::MaterialPBR::SpecularGlossiness::writeJSON(void* writer, GLTF::Options* options) {
+	rapidjson::Writer<rapidjson::StringBuffer>* jsonWriter = (rapidjson::Writer<rapidjson::StringBuffer>*)writer;
+	if (diffuseFactor) {
+		jsonWriter->Key("diffuseFactor");
+		jsonWriter->StartArray();
+		for (int i = 0; i < 4; i++) {
+			jsonWriter->Double(diffuseFactor[i]);
+		}
+		jsonWriter->EndArray();
+	}
+	if (diffuseTexture) {
+		jsonWriter->Key("diffuseTexture");
+		jsonWriter->StartObject();
+		diffuseTexture->writeJSON(writer, options);
+		jsonWriter->EndObject();
+	}
+	if (specularFactor) {
+		jsonWriter->Key("specularFactor");
+		jsonWriter->StartArray();
+		for (int i = 0; i < 3; i++) {
+			jsonWriter->Double(specularFactor[i]);
+		}
+		jsonWriter->EndArray();
+	}
+	if (glossinessFactor) {
+		jsonWriter->Key("glossinessFactor");
+		jsonWriter->StartArray();
+		jsonWriter->Double(glossinessFactor[0]);
+		jsonWriter->EndArray();
+	}
+	if (specularGlossinessTexture) {
+		jsonWriter->Key("specularGlossinessTexture");
+		jsonWriter->StartObject();
+		specularGlossinessTexture->writeJSON(writer, options);
+		jsonWriter->EndObject();
+	}
+	GLTF::Object::writeJSON(writer, options);
+}
+
+void GLTF::MaterialPBR::writeJSON(void* writer, GLTF::Options* options) {
+	rapidjson::Writer<rapidjson::StringBuffer>* jsonWriter = (rapidjson::Writer<rapidjson::StringBuffer>*)writer;
+	if (metallicRoughness) {
+		jsonWriter->Key("pbrMetallicRoughness");
+		jsonWriter->StartObject();
+		metallicRoughness->writeJSON(writer, options);
+		jsonWriter->EndObject();
+	}
+	if (emissiveFactor) {
+		jsonWriter->Key("emissiveFactor");
+		jsonWriter->StartArray();
+		for (int i = 0; i < 3; i++) {
+			jsonWriter->Double(emissiveFactor[i]);
+		}
+		jsonWriter->EndArray();
+	}
+	if (emissiveTexture) {
+		jsonWriter->Key("emissiveTexture");
+		jsonWriter->StartObject();
+		emissiveTexture->writeJSON(writer, options);
+		jsonWriter->EndObject();
+	}
+	if (normalTexture) {
+		jsonWriter->Key("normalTexture");
+		jsonWriter->StartObject();
+		normalTexture->writeJSON(writer, options);
+		jsonWriter->EndObject();
+	}
+	if (occlusionTexture) {
+		jsonWriter->Key("occlusionTexture");
+		jsonWriter->StartObject();
+		occlusionTexture->writeJSON(writer, options);
+		jsonWriter->EndObject();
+	}
+	if (options->specularGlossiness) {
+		if (specularGlossiness && 
+			(specularGlossiness->diffuseTexture != NULL ||
+				specularGlossiness->specularGlossinessTexture != NULL)) {
+			jsonWriter->Key("extensions");
+			jsonWriter->StartObject();
+			jsonWriter->Key("KHR_materials_pbrSpecularGlossiness");
+			jsonWriter->StartObject();
+			specularGlossiness->writeJSON(writer, options);
+			jsonWriter->EndObject();
+			jsonWriter->EndObject();
+		}
+	}
+}
+
 void GLTF::MaterialCommon::Light::writeJSON(void* writer, GLTF::Options* options) {
 	rapidjson::Writer<rapidjson::StringBuffer>* jsonWriter = (rapidjson::Writer<rapidjson::StringBuffer>*)writer;
 	if (type != MaterialCommon::Light::UNKOWN) {
@@ -161,6 +299,10 @@ const char* GLTF::MaterialCommon::getTechniqueName() {
 }
 
 GLTF::Material* GLTF::MaterialCommon::getMaterial(std::vector<GLTF::MaterialCommon::Light*> lights) {
+	return getMaterial(lights, false);
+}
+
+GLTF::Material* GLTF::MaterialCommon::getMaterial(std::vector<GLTF::MaterialCommon::Light*> lights, bool hasColor) {
 	GLTF::Material* material = new GLTF::Material();
 	material->values = values;
 	GLTF::Technique* technique = new GLTF::Technique();
@@ -304,6 +446,11 @@ GLTF::Material* GLTF::MaterialCommon::getMaterial(std::vector<GLTF::MaterialComm
 		technique->attributes["a_texcoord0"] = "texcoord0";
 		program->attributes.insert("a_texcoord0");
 	}
+	if (hasColor) {
+		technique->parameters["color0"] = new GLTF::Technique::Parameter("COLOR_0", GLTF::Constants::WebGL::FLOAT_VEC3);
+		technique->attributes["a_color0"] = "color0";
+		program->attributes.insert("a_color0");
+	}
 	if (hasSkinning) {
 		technique->parameters["joint"] = new GLTF::Technique::Parameter("JOINT", GLTF::Constants::WebGL::FLOAT_VEC4);
 		technique->attributes["a_joint"] = "joint";
@@ -382,6 +529,15 @@ attribute vec2 a_texcoord0;\n\
 varying vec2 " + v_texcoord + ";\n";
 		vertexShaderMain += "    " + v_texcoord + " = a_texcoord0;\n";
 		fragmentShaderSource += "varying vec2 " + v_texcoord + ";\n";
+	}
+
+	// Add color if a color attribute exists
+	if (hasColor) {
+		vertexShaderSource += "\
+attribute vec3 a_color0;\n\
+varying vec3 v_color0;\n";
+		vertexShaderMain += "    v_color0 = a_color0;\n";
+		fragmentShaderSource += "varying vec3 v_color0;\n";
 	}
 
 	if (hasSkinning) {
@@ -503,7 +659,14 @@ void main(void) {\n\
 
 	fragmentShaderSource += "\
 void main(void) {\n";
-	std::string colorCreationBlock = "    vec3 color = vec3(0.0, 0.0, 0.0);\n";
+	
+	std::string colorCreationBlock;
+	if (!hasColor) {
+		colorCreationBlock = "    vec3 color = vec3(0.0, 0.0, 0.0);\n";
+	}
+	else {
+		colorCreationBlock = "    vec3 color = v_color0;\n";
+	}
 	if (hasNormals) {
 		fragmentShaderSource += "    vec3 normal = normalize(v_normal);\n";
 		if (doubleSided) {
@@ -630,6 +793,68 @@ std::string GLTF::MaterialCommon::getTechniqueKey() {
 		id += "SKINNED;";
 	}
 	return id;
+}
+
+GLTF::MaterialPBR::MaterialPBR() {
+	this->type = GLTF::Material::PBR_METALLIC_ROUGHNESS;
+	this->metallicRoughness = new GLTF::MaterialPBR::MetallicRoughness();
+	this->specularGlossiness = new GLTF::MaterialPBR::SpecularGlossiness();
+}
+
+GLTF::MaterialPBR* GLTF::MaterialCommon::getMaterialPBR(bool specularGlossiness) {
+	GLTF::MaterialPBR* material = new GLTF::MaterialPBR();
+	if (values->diffuse) {
+		material->metallicRoughness->baseColorFactor = values->diffuse;
+		if (specularGlossiness) {
+			material->specularGlossiness->diffuseFactor = values->diffuse;
+		}
+	}
+	if (values->diffuseTexture) {
+		GLTF::MaterialPBR::Texture* texture = new GLTF::MaterialPBR::Texture();
+		texture->texture = values->diffuseTexture;
+		material->metallicRoughness->baseColorTexture = texture;
+		if (specularGlossiness) {
+			material->specularGlossiness->diffuseTexture = texture;
+		}
+	}
+
+	if (values->emission) {
+		material->emissiveFactor = values->emission;
+	}
+	if (values->emissionTexture) {
+		GLTF::MaterialPBR::Texture* texture = new GLTF::MaterialPBR::Texture();
+		texture->texture = values->diffuseTexture;
+		material->emissiveTexture = texture;
+		material->emissiveFactor = new float[3]{ 1.0, 1.0, 1.0 };
+	}
+
+	if (values->ambientTexture) {
+		GLTF::MaterialPBR::Texture* texture = new GLTF::MaterialPBR::Texture();
+		texture->texture = values->ambientTexture;
+		material->occlusionTexture = texture;
+	}
+
+	if (specularGlossiness) {
+		if (values->specular) {
+			material->specularGlossiness->specularFactor = values->specular;
+		}
+		if (values->specularTexture) {
+			GLTF::MaterialPBR::Texture* texture = new GLTF::MaterialPBR::Texture();
+			texture->texture = values->specularTexture;
+			material->specularGlossiness->specularGlossinessTexture = texture;
+		}
+		if (values->shininess) {
+			material->specularGlossiness->glossinessFactor = values->shininess;
+		}
+	}
+
+	if (values->bumpTexture) {
+		GLTF::MaterialPBR::Texture* texture = new GLTF::MaterialPBR::Texture();
+		texture->texture = values->bumpTexture;
+		material->normalTexture = texture;
+	}
+	material->name = name;
+	return material;
 }
 
 void GLTF::MaterialCommon::writeJSON(void* writer, GLTF::Options* options) {

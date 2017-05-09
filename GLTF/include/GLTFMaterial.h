@@ -12,6 +12,7 @@ namespace GLTF {
 		enum Type {
 			MATERIAL,
 			MATERIAL_COMMON,
+			PBR_METALLIC_ROUGHNESS,
 			UNKNOWN
 		};
 
@@ -27,6 +28,7 @@ namespace GLTF {
 			GLTF::Texture* specularTexture = NULL;
 			float* shininess = NULL;
 			float* transparency = NULL;
+			GLTF::Texture* bumpTexture = NULL;
 
 			void writeJSON(void* writer, GLTF::Options* options);
 		};
@@ -40,6 +42,49 @@ namespace GLTF {
 		virtual void writeJSON(void* writer, GLTF::Options* options);
 	};
 
+	class MaterialPBR : public GLTF::Material {
+	public: 
+		class Texture : public GLTF::Object {
+		public:
+			int scale = -1;
+			GLTF::Texture* texture = NULL;
+			int texCoord = -1;
+
+			void writeJSON(void* writer, GLTF::Options* options);
+		};
+
+		class MetallicRoughness : public GLTF::Object {
+		public:
+			float* baseColorFactor = NULL;
+			Texture* baseColorTexture = NULL;
+			float metallicFactor = -1.0;
+			float roughnessFactor = -1.0;
+			Texture* metallicRoughnessTexture = NULL;
+
+			void writeJSON(void* writer, GLTF::Options* options);
+		};
+
+		class SpecularGlossiness : public GLTF::Object {
+		public:
+			float* diffuseFactor = NULL;
+			Texture* diffuseTexture = NULL;
+			float* specularFactor = NULL;
+			Texture* specularGlossinessTexture = NULL;
+			float* glossinessFactor = NULL;
+
+			void writeJSON(void* writer, GLTF::Options* options);
+		};
+
+		MetallicRoughness* metallicRoughness = NULL;
+		Texture* normalTexture = NULL;
+		Texture* occlusionTexture = NULL;
+		float* emissiveFactor = NULL;
+		Texture* emissiveTexture = NULL;
+		SpecularGlossiness* specularGlossiness = NULL;
+
+		MaterialPBR();
+		void writeJSON(void* writer, GLTF::Options* options);
+	};
 
 	class MaterialCommon : public GLTF::Material {
 	public:
@@ -80,7 +125,9 @@ namespace GLTF {
 		MaterialCommon();
 		const char* getTechniqueName();
 		GLTF::Material* getMaterial(std::vector<GLTF::MaterialCommon::Light*> lights);
+		GLTF::Material* getMaterial(std::vector<GLTF::MaterialCommon::Light*> lights, bool hasColorAttribute);
 		std::string getTechniqueKey();
+		GLTF::MaterialPBR* getMaterialPBR(bool specularGlossiness);
 		virtual void writeJSON(void* writer, GLTF::Options* options);
 	};
 }
